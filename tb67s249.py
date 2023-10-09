@@ -48,29 +48,37 @@ class TB67S249():
         self._agc.off()
         self._dir.off()
         
-    def setAngleStep(self, angle):
+    def setForwardStep(self):
         interval_time = 1000
         if self._run_mode != "p":
             print("This func support only p mode")
             return
         
-        if angle > 0:
-            if self._ccw:
-                self.setDir(True)
-            else:
-                self.setDir(False)
+        if self._ccw:
+            self.setDir(True)
         else:
-            if self._ccw:
-                self.setDir(False)
-            else:
-                self.setDir(True)
+            self.setDir(False)
         
-        steps = abs(angle)
-        for i in range(steps):
-            self._step.on()
-            utime.sleep_us(interval_time)
-            self._step.off()
-            utime.sleep_us(interval_time)
+        self._step.on()
+        utime.sleep_us(interval_time)
+        self._step.off()
+        utime.sleep_us(interval_time)
+        
+    def setReverseStep(self):
+        interval_time = 1000
+        if self._run_mode != "p":
+            print("This func support only p mode")
+            return
+        
+        if self._ccw:
+            self.setDir(False)
+        else:
+            self.setDir(True)
+        
+        self._step.on()
+        utime.sleep_us(interval_time)
+        self._step.off()
+        utime.sleep_us(interval_time)
         
     def setRPS(self, rps):
         if rps > 0:
