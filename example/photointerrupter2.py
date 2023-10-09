@@ -106,7 +106,8 @@ def drawMainDisplay(menu):
     line_height = 10
     
     # clear the display
-    display.fill_rect(0, 0, width, height, 0)
+    display.fill(0) # 表示内容消去
+    #display.fill_rect(0, 0, width, height, 0)
     
     list_length = len(menu)
     short_list = menu[shift:shift+total_lines]
@@ -116,10 +117,10 @@ def drawMainDisplay(menu):
             display.fill_rect(0, (line-1) * line_height, width, line_height, 1)
             display.text(">", 0, (line-1) * line_height, 0)
             display.text(item, 10, (line-1) * line_height, 0)
-            display.show()
+            #display.show()
         else:
             display.text(item, 10, (line-1) * line_height, 1)
-            display.show()
+            #display.show()
         line += 1
     display.show()
 
