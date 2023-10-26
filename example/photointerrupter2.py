@@ -3,6 +3,8 @@ import time
 from machine import Pin, I2C  # 入出力モジュール
 import ssd1306                # 液晶表示器用ライブラリ
 import math                   # 数学関数
+import utime
+from tb67s249 import TB67S249
 
 ph = [0, 0, 0, 0]
 
@@ -34,12 +36,29 @@ tact3 = Pin(22, Pin.IN, Pin.PULL_UP)
 
 pressTact = 0
 
+rightMotor = TB67S249( 7,  6,  5,  4,  3,  2, 1, 0)
+leftMotor  = TB67S249(15, 14, 13, 12, 11, 10, 9, 8)
+
+leftMotor.setRunMode("v")
+leftMotor.setReset(False)
+leftMotor.setTorque(True)
+leftMotor.setStepSize(4)
+leftMotor.setAgc(True)
+leftMotor.setCCWRot(True)
+
+rightMotor.setRunMode("v")
+rightMotor.setReset(False)
+rightMotor.setTorque(True)
+rightMotor.setStepSize(4)
+rightMotor.setAgc(True)
+rightMotor.setCCWRot(False)
+
 def readPhotoInterrupter(timer):
     global ph
-    ph[0] = phPin0.read_u16()
-    ph[1] = phPin1.read_u16()
-    ph[2] = phPin2.read_u16()
-    ph[3] = phPin3.read_u16()
+    ph[0] = 65535 - phPin0.read_u16()
+    ph[1] = 65535 - phPin1.read_u16()
+    ph[2] = 65535 - phPin2.read_u16()
+    ph[3] = 65535 - phPin3.read_u16()
 
 timerPI = machine.Timer()
 timerPI.init(freq=100, mode=machine.Timer.PERIODIC, callback=readPhotoInterrupter)
@@ -124,10 +143,47 @@ def drawMainDisplay(menu):
         line += 1
     display.show()
 
+e_pre = 0
+ie = 0
+
+def goToWallCallback(timer):
+    global e_pre
+    global ie
+    
+    KP = 0.00003
+    KD = 0
+    KI = 0
+    T = 0.01
+    
+    time.sleep(T)
+    
+    y = (ph[1] + ph[2]) / 2
+    r = 60000
+    
+    e = r - y
+    de = (e - e_pre) / T
+    ie = ie + (e + e_pre) * T / 2
+    u = KP * e + KI * ie + KD * de
+    
+    print("PID: " + str(u))
+    
+    leftMotor.setRPS(u)
+    rightMotor.setRPS(u)
+    e_pre = e
+
+def GoToWall():
+    timerGoToWall = machine.Timer()
+    leftMotor.start()
+    rightMotor.start()
+    timerGoToWall.init(freq=50, mode=machine.Timer.PERIODIC, callback=goToWallCallback)
+
 
 menuNum = 0
 menu = get_menu()
 drawMainDisplay(menu)
+
+countDown = False
+countStartTime = utime.ticks_ms()
 
 while True:
     if menuNum == 1:
@@ -144,3 +200,15 @@ while True:
             drawSensorDisplay()
         else:
             drawMainDisplay(menu)
+
+    if pressTact == 2:
+        countDown = True
+        pressTact = 0
+        countStartTime = utime.ticks_ms()
+
+    if countDown:
+        elapsed = 3 - int((utime.ticks_ms() - countStartTime) / 1000)
+        print(elapsed)
+        if elapsed <= 0:
+            countDown = False
+            GoToWall()

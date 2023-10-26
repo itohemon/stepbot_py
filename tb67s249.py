@@ -98,7 +98,7 @@ class TB67S249():
         if rps > 3.0:
             rps = 3.0
         step = rps * self._rpsteps
-        self.setStep(rps * self._rpsteps)
+        self.setStep(step)
             
     def setCCWRot(self, flg):
         '''
@@ -177,6 +177,7 @@ class TB67S249():
         if step == 0:
             self.stop()
         else:
+            self.start()
             self._step.freq(int(step))
             
     def start(self):
